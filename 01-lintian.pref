@@ -1,0 +1,7 @@
+Package: lintian
+Pin: release a=unstable
+Pin-Priority: 901
+
+Package: debian-policy
+Pin: release a=unstable
+Pin-Priority: 901

@@ -1,0 +1,4 @@
+# Don't track this content:
+.vagrant/
+private_key
+playbook.retry

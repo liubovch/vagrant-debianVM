@@ -1,0 +1,123 @@
+---
+- hosts: all
+  become: true
+  remote_user: root
+  tasks:
+  - name: Add a possibility to install some packages from unstable
+    template:
+      src: "01-unstable.list"
+      dest: "/etc/apt/sources.list.d/01-unstable.list"
+  - name: But not all the packages!
+    template:
+      src: "01-unstable.pref"
+      dest: "/etc/apt/preferences.d/01-unstable.pref"
+  - name: Force to install lintian from unstable
+    template:
+      src: "01-lintian.pref"
+      dest: "/etc/apt/preferences.d/01-lintian.pref"
+  - name: Force to install cme from unstable
+    template:
+      src: "01-cme.pref"
+      dest: "/etc/apt/preferences.d/01-cme.pref"
+
+  - name: Upgrade everything
+    apt:
+      upgrade: dist
+      update_cache: yes
+
+  - name: Install essential packages
+    apt:
+      name: "{{ packages }}"
+    vars:
+      packages:
+      - git
+      - vim
+      - zsh
+      - zsh-syntax-highlighting
+
+  - name: Install Debian-related packages
+    apt:
+      name: "{{ packages }}"
+    vars:
+      packages:
+      - autopkgtest
+      - schroot
+      - sbuild
+      - ubuntu-dev-tools  # for mk-sbuild
+      - pristine-tar
+      - lintian
+      - debian-policy
+      - cme
+      - libconfig-model-dpkg-perl
+      - quilt
+      - apt-cacher-ng
+      - ccache
+
+  - name: Configure user
+    user:
+      name: vagrant
+      shell: /bin/zsh
+      groups: sbuild
+      append: yes
+
+- hosts: all
+  become: true
+  become_user: vagrant
+  tasks:
+
+  - name: create .zshrc
+    template:
+      src: zshrc
+      dest: "$HOME/.zshrc"
+
+  - name: create .quiltrc-dpkg
+    template:
+      src: quiltrc-dpkg
+      dest: "$HOME/.quiltrc-dpkg"
+
+  - name: generate ssh key
+    command: 'ssh-keygen -b 2048 -t rsa -f $HOME/.ssh/id_rsa -q -N ""'
+    args:
+      creates: "$HOME/.ssh/id_rsa"
+
+  - name: configure git
+    block:
+    - git_config:
+        name: user.name
+        value: Liubov Chuprikova
+        scope: global
+    - git_config:
+        name: user.email
+        value: chuprikovalv@gmail.com
+        scope: global
+
+  - name: Create chroot
+    command: 'mk-sbuild sid'
+    args:
+      creates: "/var/lib/schroot/chroots/sid-amd64/"
+
+- hosts: all
+  become: true
+  remote_user: root
+  tasks:
+
+  - name: Use "http://localhost:3142/debian" as proxy in our schroot
+    template:
+      src: proxy
+      dest: "/var/lib/schroot/chroots/sid-amd64/etc/apt/apt.conf.d/proxy"
+
+  - name: Configure ccache
+    script: configure_ccache.sh
+    args:
+      creates: "/var/cache/ccache-sbuild/sbuild-setup"
+
+  - name: Install ccache inside the schroot
+    command: "schroot -c source:sid-amd64 apt-get install ccache -d home"
+    args:
+      creates: "/var/lib/schroot/chroots/sid-amd64/usr/bin/ccache"
+
+  - name: Edit the corresponding config file in /etc/schroot/chroot.d/
+    lineinfile:
+      path: /etc/schroot/chroot.d/sbuild-sid-amd64
+      line: "command-prefix=/var/cache/ccache-sbuild/sbuild-setup"
+

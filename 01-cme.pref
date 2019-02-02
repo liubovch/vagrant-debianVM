@@ -1,0 +1,7 @@
+Package: cme
+Pin: release a=unstable
+Pin-Priority: 901
+
+Package: libconfig-model-dpkg-perl
+Pin: release a=unstable
+Pin-Priority: 901
