@@ -61,3 +61,7 @@ alias fgrep='fgrep --colour=auto'
 
 #alias dquilt for quilt
 alias dquilt="quilt --quiltrc=${HOME}/.quiltrc-dpkg"
+
+DEBEMAIL="chuprikovalv@gmail.com"
+DEBFULLNAME="Liubov Chuprikova"
+export DEBEMAIL DEBFULLNAME
