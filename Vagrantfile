@@ -1,5 +1,5 @@
 Vagrant.configure("2") do |config|
-  config.vm.box = "debian/contrib-testing64"
+  config.vm.box = "debian/contrib-buster64"
   config.disksize.size = "12GB"
 
   config.vm.provider "virtualbox" do |v|
